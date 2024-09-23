@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Calculator</title>
+    <link rel="icon" href="calculator.jpg" type="image/jpeg" sizes="96x96"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black; 
+            color: white; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #1a1a1a; 
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); 
+            text-align: center;
+        }
+
+        h1 {
+            color: gold; 
+            margin-bottom: 20px;
+        }
+
+        form {
+            margin-bottom: 20px;
+            color: white; 
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #333; 
+            color: white; 
+        }
+
+        input[type="text"]::placeholder {
+            color: #bbb; 
+        }
+
+        input[type="submit"] {
+            background-color: gold; 
+            color: black; 
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: black; 
+            color: gold; 
+        }
+
+        .result, .error {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        .error {
+            color: red; 
+        }
+    </style>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <link rel="icon" href="images/calculator.png" type="image/png" sizes="96x96"/>
+</head>
+<body>
+    <div class="container">
+        <h1>Grade Calculator</h1>
+        <form id="gradeForm">
+            <label for="absences">Number of Absences:</label>
+            <input type="text" id="absences" name="absences" required>
+
+            <label for="prelim">Prelim Exam Grade (0-100):</label>
+            <input type="text" id="prelim" name="prelim_grade" required>
+
+            <label for="quizzes">Quizzes Grade (0-100):</label>
+            <input type="text" id="quizzes" name="quizzes_grade" required>
+
+            <label for="requirements">Requirements Grade (0-100):</label>
+            <input type="text" id="requirements" name="requirements_grade" required>
+
+            <label for="recitation">Recitation Grade (0-100):</label>
+            <input type="text" id="recitation" name="recitation_grade" required>
+
+            <input type="submit" value="Calculate" id="calculateButton">
+        </form>
+        <div id="result" class="result" style="display: none"></div>
+    </div>
+
+    <py-script>
+def calculate_grades(event):
+    event.preventDefault()
+    
+    absences_str = Element('absences').element.value
+    prelim_str = Element('prelim').element.value
+    quizzes_str = Element('quizzes').element.value
+    requirements_str = Element('requirements').element.value
+    recitation_str = Element('recitation').element.value
+
+    try:
+        absences = int(absences_str)
+        prelim = float(prelim_str)
+        quizzes = float(quizzes_str)
+        requirements = float(requirements_str)
+        recitation = float(recitation_str)
+
+        if prelim < 0 or prelim > 100 or quizzes < 0 or quizzes > 100 or requirements < 0 or requirements > 100 or recitation < 0 or recitation > 100:
+            raise ValueError("All grades must be between 0 and 100.")
+        if absences < 0:
+            raise ValueError("Absences cannot be negative.")
+
+        attendance = 100 - (10 * absences)
+        if absences >= 4:
+            result_element = Element('result')
+            result_element.element.innerHTML = "FAIL due to excessive absences."
+            result_element.element.style.display = "block"
+            return
+
+        class_standing = (0.40 * quizzes) + (0.30 * requirements) + (0.30 * recitation)
+
+        prelim_grade = (0.60 * prelim) + (0.10 * attendance) + (0.30 * class_standing)
+
+        result = f"Prelim Grade: {prelim_grade:.2f}<br>"
+
+        prelim_contribution = 0.20 * prelim_grade
+        max_midterm_final = 0.30 + 0.50
+
+        if prelim_contribution + max_midterm_final * 100 < 75:
+            result += "It is impossible to pass with your current Prelim grade.<br>"
+        else:
+            remaining_for_midterm_final = 75 - prelim_contribution
+            required_midterm = remaining_for_midterm_final / max_midterm_final
+            required_final = required_midterm
+
+            result += f"To pass the subject with an overall grade of 75, you need at least:<br>"
+            result += f"Midterm grade: {required_midterm:.2f}<br>"
+            result += f"Final grade: {required_final:.2f}<br><br>"
+
+            remaining_for_midterm_final1 = 90 - prelim_contribution
+            required_midterm1 = remaining_for_midterm_final1 / max_midterm_final
+            required_final1 = required_midterm1
+
+            if prelim_grade < 70 or required_midterm1 > 100 or required_final1 > 100:
+                result += "Unfortunately, it's not possible for you to qualify for Dean's Lister, even with perfect scores. <br> Don't give up, there's always room to improve! <br>Use this as motivation to continue growing!"
+            elif prelim_contribution + max_midterm_final * 100 >= 90:
+                result += "Congratulations! You have qualified for Dean's Lister.<br>"
+                result += f"Now, you only need to have a midterm grade of {required_midterm1:.2f} and a final grade of {required_final1:.2f}"
+            else:
+                result += "If you want to become a Dean's Lister, you need at least:<br>"
+                result += f"Midterm grade: {required_midterm1:.2f}<br>"
+                result += f"Final grade: {required_final1:.2f}"
+
+        result_element = Element('result')
+        result_element.element.innerHTML = result
+        result_element.element.style.display = "block"
+
+    except ValueError as e:
+        result_element = Element('result')
+        result_element.element.innerHTML = f'<span style="color: red;">{str(e)}</span>'
+        result_element.element.style.display = "block"
+
+def setup():
+    Element('gradeForm').element.onsubmit = calculate_grades
+
+setup()
+    </py-script>
+</body>
+</html>
